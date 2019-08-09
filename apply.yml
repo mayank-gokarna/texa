@@ -1,0 +1,7 @@
+---
+
+- hosts: localhost
+
+  roles:
+   # - {role: 'devops',tags:'openshift'}
+    - {role: 'appsetup', tags: 'appsetup'}

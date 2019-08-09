@@ -1,0 +1,10 @@
+[all:vars]
+oshost=https://inmbzicp6144.in.dst.ibm.com:8443
+ostoken=cA_uMGNhhmkXwxy6EnuHf1MeRsdc5HXLHf49Orwm_JQ
+project=bankdev
+app=samplespringdemo
+state=present
+version=1.0
+gitrepo=github.ibm.com/bhjayara/SpringThyme/config
+gittoken=030badd195a8f49e45512b4e4d1302c43017d370
+user=bhagya

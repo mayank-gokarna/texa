@@ -1,0 +1,346 @@
+apiVersion: v1
+kind: Template
+labels:
+  template: cicd
+  group: cicd
+metadata:
+  annotations:
+    iconClass: icon-jenkins
+    tags: instant-app,jenkins,gogs,nexus,cicd
+  name: cicd
+message: "Use the following credentials for login:\nJenkins: use your OpenShift credentials\nNexus: admin/admin123\nSonarQube: admin/admin\nGogs Git Server: gogs/gogs"
+parameters:
+- displayName: DEV project name
+  value: dev
+  name: DEV_PROJECT
+  required: true
+- displayName: STAGE project name
+  value: stage
+  name: STAGE_PROJECT
+  required: true
+- displayName: source code url with developer token
+  value: xyz
+  name: GIT_URL_TOKEN
+  required: true    
+- displayName: sonarqube url
+  value: sonarqube:9000
+  name: SONARQUBE_URL
+  required: true    
+
+- displayName: Application name
+  value: cards
+  name: APP_NAME
+  required: true    
+- displayName: Image repository url
+  value: quay.io
+  name: IMAGE_REPOSITORY_URL
+  required: true    
+- displayName: Image repository username
+  value: nirkambl
+  name: IMAGE_REPOSITORY_USERNAME
+  required: true    
+- displayName: Image repository password
+  value: welcome123
+  name: IMAGE_REPOSITORY_PASSWORD
+  required: true    
+- description: Webhook secret
+  from: '[a-zA-Z0-9]{8}'
+  generate: expression
+  name: WEBHOOK_SECRET
+  required: true
+- displayName: Integrate Quay.io
+  description: Integrate image build and deployment with Quay.io 
+  value: "false"
+  name: ENABLE_QUAY
+  required: true
+- displayName: Quay.io Username
+  description: Quay.io username to push the images to tasks-sample-app repository on your Quay.io account
+  name: QUAY_USERNAME
+- displayName: Quay.io Password
+  description: Quay.io password to push the images to tasks-sample-app repository on your Quay.io account
+  name: QUAY_PASSWORD
+- displayName: Quay.io Image Repository
+  description: Quay.io repository for pushing Tasks container images
+  name: QUAY_REPOSITORY
+  required: true
+  value: tasks-app
+objects:
+- apiVersion: v1
+  groupNames: null
+  kind: RoleBinding
+  metadata:
+    name: default_admin
+  roleRef:
+    name: admin
+  subjects:
+  - kind: ServiceAccount
+    name: default
+# Pipeline
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    annotations:
+      pipeline.alpha.openshift.io/uses: '[{"name": "jenkins", "namespace": "", "kind": "DeploymentConfig"}]'
+    labels:
+      app: cicd-pipeline
+      name: cicd-pipeline
+    name: sample-pipeline
+  spec:
+    triggers:
+      - type: GitHub
+        github:
+          secret: ${WEBHOOK_SECRET}
+      - type: Generic
+        generic:
+          secret: ${WEBHOOK_SECRET}
+    runPolicy: Serial
+    source:
+      type: None
+    strategy:
+      jenkinsPipelineStrategy:
+        env:
+        - name: DEV_PROJECT
+          value: ${DEV_PROJECT}
+        - name: STAGE_PROJECT
+          value: ${STAGE_PROJECT}
+        - name: ENABLE_QUAY
+          value: ${ENABLE_QUAY}
+        - name: GIT_URL_TOKEN
+          value: ${GIT_URL_TOKEN}
+        - name: SONARQUBE_URL
+          value: ${SONARQUBE_URL}
+        - name: APP_NAME
+          value: ${APP_NAME}
+        - name: IMAGE_REPOSITORY_URL
+          value: ${IMAGE_REPOSITORY_URL}  
+        - name: IMAGE_REPOSITORY_USERNAME
+          value: ${IMAGE_REPOSITORY_USERNAME}  
+        - name: IMAGE_REPOSITORY_PASSWORD
+          value: ${IMAGE_REPOSITORY_PASSWORD}    
+        jenkinsfile: |-
+          def mvnCmd = "mvn -s configuration/cicd-settings-nexus3.xml"
+            pipeline {
+                tools {
+                    maven 'mvn'
+                  }
+                agent {
+                    label 'maven'
+                }
+                
+                stages {
+
+                stage('Build App') {
+                    
+                    steps {
+                        git "${env.GIT_URL_TOKEN}"
+                        sh "${mvnCmd} install -DskipTests=true"
+                        }
+                    }
+                    
+                
+                stage('Test') {
+ 
+                    steps {
+                        sh "${mvnCmd} test"
+                        step([$class: 'JUnitResultArchiver', testResults: '**/target/surefire-reports/TEST-*.xml'])
+                    }
+                }
+                
+                stage('Code Analysis') {
+                
+                    steps {
+                        script {
+                            sh "${mvnCmd} sonar:sonar -Dsonar.host.url=http://${env.SONARQUBE_URL} -DskipTests=true"
+                        }
+                    }
+                }
+                
+                
+                stage('Archive App') {
+                
+                    steps {
+                        sh "${mvnCmd} deploy -DskipTests=true -P nexus"
+                    }
+                }
+
+                stage('Create Image Builder') {
+                    when {
+                        expression {
+                            openshift.withCluster() {
+                                openshift.withProject(env.DEV_PROJECT) {
+                                    return !openshift.selector("bc", "${env.APP_NAME}").exists();
+                                }
+                            }
+                        }
+                    }
+                    
+                    steps {
+                        script {
+                            openshift.withCluster() {
+                                openshift.withProject(env.DEV_PROJECT) {
+                                    openshift.newBuild("--name=${env.APP_NAME}", "--allow-missing-imagestream-tags=true", "--binary=true")
+                                }
+                            }
+                        }
+                    }
+                }
+
+                stage('Build Image') {
+                  
+                  steps {
+                    sh "cp target/cards-0.1-SNAPSHOT.jar target/ROOT.jar"
+                    script {
+                      openshift.withCluster() {
+                        openshift.withProject(env.DEV_PROJECT) {
+                            
+                         // oc start-build --follow --from-dir cards/. cards
+                         // --from-dir=oc-build
+                          
+                         openshift.selector("bc", "${env.APP_NAME}").startBuild("--from-file=.", "--wait=true")
+                         // I have to push to Quay.io
+                         
+                         // end push
+                        }
+                      }
+                    }
+                  }
+                }
+                stage('Push Image to Quay') {
+                  agent {
+                    label 'skopeo'
+                  }
+                  steps {
+                      script {
+                          openshift.withCluster() {
+                            openshift.withProject(env.DEV_PROJECT) {
+                            if (env.ENABLE_QUAY.toBoolean()) {
+                                         sh "skopeo copy docker://docker-registry.default.svc:5000/dev/cards:latest docker://${env.IMAGE_REPOSITORY_URL}/cards:dev --dest-creds ${env.IMAGE_REPOSITORY_USERNAME}:${env.IMAGE_REPOSITORY_PASSWORD} --src-tls-verify=false --dest-tls-verify=false"
+                               }    
+                            }
+                          }
+                      }
+                  }
+                }
+                stage('Create DEPOYMENT CONFIG IN DEV') {
+                            when {
+                              expression {
+                                openshift.withCluster() {
+                                  openshift.withProject(env.DEV_PROJECT) {
+                                    return !openshift.selector('dc', "${env.APP_NAME}").exists()
+                                  }
+                                }
+                              }
+                            }
+                            steps {
+                              script {
+                                openshift.withCluster() {
+                                  openshift.withProject(env.DEV_PROJECT) {
+                                     // -e CONFIG_SERVER_URI=http://9.42.62.186:8888/configserver/ -e PROFILE=sandbox -e LOG_PATH=/tmp/logs
+                                    def app = openshift.newApp("${env.APP_NAME}:latest","--allow-missing-imagestream-tags=true", "-e CONFIG_SERVER_URI=http://9.42.62.186:8888/configserver/","-e PROFILE=sandbox","-e LOG_PATH=/tmp/logs" )
+                                    app.narrow("svc").expose();
+                                    //openshift.set("probe dc/cards --readiness --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=30 --failure-threshold=10 --period-seconds=10")
+                                    //openshift.set("probe dc/cards --liveness  --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=180 --failure-threshold=10 --period-seconds=10")
+                                    def dc = openshift.selector("dc", "${env.APP_NAME}")
+                                    while (dc.object().spec.replicas != dc.object().status.availableReplicas) {
+                                        sleep 10
+                                    }
+                                    openshift.set("triggers", "dc/${env.APP_NAME}", "--manual")
+                                  }
+                                }
+                              }
+                            }
+                          }
+                stage('Deploy DEV') {
+                  steps {
+                    script {
+                      openshift.withCluster() {
+                        openshift.withProject(env.DEV_PROJECT) {
+                          openshift.selector("dc", "${env.APP_NAME}").rollout().latest();
+                        }
+                      }
+                    }
+                  }
+                }
+                //stage('Promote to STAGE?') 
+                //stage('Deploy STAGE') 
+              }
+            }
+      type: JenkinsPipeline
+- apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    labels:
+      app: cicd-pipeline
+      role: jenkins-slave
+    name: jenkins-slaves
+  data:
+    maven-template: |-
+      <org.csanchez.jenkins.plugins.kubernetes.PodTemplate>
+        <inheritFrom></inheritFrom>
+        <name>maven</name>
+        <privileged>false</privileged>
+        <alwaysPullImage>false</alwaysPullImage>
+        <instanceCap>2147483647</instanceCap>
+        <idleMinutes>0</idleMinutes>
+        <label>maven</label>
+        <serviceAccount>jenkins</serviceAccount>
+        <nodeSelector></nodeSelector>
+        <customWorkspaceVolumeEnabled>false</customWorkspaceVolumeEnabled>
+        <workspaceVolume class="org.csanchez.jenkins.plugins.kubernetes.volumes.workspace.EmptyDirWorkspaceVolume">
+          <memory>false</memory>
+        </workspaceVolume>
+        <volumes />
+        <containers>
+          <org.csanchez.jenkins.plugins.kubernetes.ContainerTemplate>
+            <name>jnlp</name>
+            <image>openshift/jenkins-agent-maven-35-centos7</image>
+            <privileged>false</privileged>
+            <alwaysPullImage>false</alwaysPullImage>
+            <workingDir>/tmp</workingDir>
+            <command></command>
+            <args>${computer.jnlpmac} ${computer.name}</args>
+            <ttyEnabled>false</ttyEnabled>
+            <resourceRequestCpu>200m</resourceRequestCpu>
+            <resourceRequestMemory>512Mi</resourceRequestMemory>
+            <resourceLimitCpu>2</resourceLimitCpu>
+            <resourceLimitMemory>4Gi</resourceLimitMemory>
+            <envVars/>
+          </org.csanchez.jenkins.plugins.kubernetes.ContainerTemplate>
+        </containers>
+        <envVars/>
+        <annotations/>
+        <imagePullSecrets/>
+      </org.csanchez.jenkins.plugins.kubernetes.PodTemplate>
+    skopeo-template: |-
+      <org.csanchez.jenkins.plugins.kubernetes.PodTemplate>
+        <inheritFrom></inheritFrom>
+        <name>skopeo</name>
+        <privileged>false</privileged>
+        <alwaysPullImage>false</alwaysPullImage>
+        <instanceCap>2147483647</instanceCap>
+        <idleMinutes>0</idleMinutes>
+        <label>skopeo</label>
+        <serviceAccount>jenkins</serviceAccount>
+        <nodeSelector></nodeSelector>
+        <customWorkspaceVolumeEnabled>false</customWorkspaceVolumeEnabled>
+        <workspaceVolume class="org.csanchez.jenkins.plugins.kubernetes.volumes.workspace.EmptyDirWorkspaceVolume">
+          <memory>false</memory>
+        </workspaceVolume>
+        <volumes />
+        <containers>
+          <org.csanchez.jenkins.plugins.kubernetes.ContainerTemplate>
+            <name>jnlp</name>
+            <image>docker.io/siamaksade/jenkins-slave-skopeo-centos7</image>
+            <privileged>false</privileged>
+            <alwaysPullImage>false</alwaysPullImage>
+            <workingDir>/tmp</workingDir>
+            <command></command>
+            <args>${computer.jnlpmac} ${computer.name}</args>
+            <ttyEnabled>false</ttyEnabled>
+            <envVars/>
+          </org.csanchez.jenkins.plugins.kubernetes.ContainerTemplate>
+        </containers>
+        <envVars/>
+        <annotations/>
+        <imagePullSecrets/>
+      </org.csanchez.jenkins.plugins.kubernetes.PodTemplate>

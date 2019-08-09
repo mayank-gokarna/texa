@@ -1,0 +1,29 @@
+- name: Copy the files required
+  copy:
+    src: sonar-postress-template.yaml
+    dest: /tmp
+ # copy:
+ #   src: jenkins-docker-slave-template.yaml
+ #   dest: /tmp
+
+#- name: Create a project
+#- name: Login into Openshift
+
+#  shell: ~/oc_CLI/oc login -u {{ user }} {{ oshost }}
+#  shell: "~/oc_CLI/oc new-project {{ project }}" 
+
+#- name: Create the Nexus Instance
+#  shell: "~/oc_CLI/oc new-app -n {{ project }}  -f /tmp/nexus-template.yaml"
+
+#- name: Create the Sonarqube Instance
+#  shell: "~/oc_CLI/oc new-app -n {{ project }}  -f /tmp/sonar-postress-template.yaml --param=SONARQUBE_VERSION=6.7"
+
+#- name: Create the Jenkins Instance
+#  shell: "oc new-app -n {{ project }} jenkins-ephemeral"
+#  shell: "~/oc_CLI/oc new-app -n {{ project }}  -f /tmp/jenkins-docker-slave-template.yaml" 
+
+- name: SOAPUI  
+  shell: export DISPLAY=:0.0
+
+- name: Install SoapUI
+  shell: "oc new-app -n {{ project }} lukastosic/docker-soapui"
