@@ -1,4 +1,4 @@
-# OpenShift Guided development Cookbook
+# OpenShift Guided devops Cookbook
 
 **Background**<br/>
 As part of the Guided Development of microservices on OpenShift,
