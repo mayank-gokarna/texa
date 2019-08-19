@@ -8,6 +8,7 @@ This document/page defines the steps involved in this development activity for t
 This guide assumes you plan to develop your microservices in Java using Spring Boot framework  or Node.js/Angular.js
 however, most of the steps remain same even if you are using a different technology e.g. Python
 and you only need to follow the technology specific build, test and run toolset.
+
 **Conclusion**
 This guide has given you an overview of how some of IBM's cloud native development
 practices and assets together with OpenShift capabilites can provide you with
