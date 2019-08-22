@@ -15,6 +15,7 @@ Process
 The following flow-chart depicts the high level process including some of
 the tools and IBM practices being demonstrated through the process.
 
+![Devops](devops.png)
 
 
 **Conclusion**<br/>
