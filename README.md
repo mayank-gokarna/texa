@@ -6,6 +6,16 @@ This guide assumes you plan to develop your microservices in Java using Spring B
 however, most of the steps remain same even if you are using a different technology e.g. Python
 and you only need to follow the technology specific build, test and run toolset.
 
+Please ensure you have been provided with Guided Development Kit which includes -
+
+* OpenShift cluster URL & hostname
+* Credentials for OpenShift and DMB
+
+Process
+The following flow-chart depicts the high level process including some of
+the tools and IBM practices being demonstrated through the process.
+
+
 
 **Conclusion**<br/>
 This guide has given you an overview of how some of IBM's cloud native development
