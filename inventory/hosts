@@ -24,3 +24,7 @@ image=openshift/nodejs:8
 isAdditionalPath=true
 additional_path=openbank/ob-payment-initiation
 angularjs=false
+configmapfilepath=ob-general
+configmapfilename=config.yaml
+configmapname=bankconfig
+pipeline_name=bankconfigpipeline
