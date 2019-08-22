@@ -1,0 +1,69 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: pipeline4jenkins2
+  annotations:
+    description: "This is a custom template under development"
+    iconClass: "icon-jenkins"
+    tags: "java,jenkins,builder "
+objects:
+  - apiVersion: v1
+    kind: BuildConfig
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: ${PIPELINE_NAME}
+        name: ${PIPELINE_NAME} 
+      name: ${PIPELINE_NAME}  
+    spec:
+      output: {}
+      postCommit: {}
+      resources: {}
+      runPolicy: Serial
+      source:
+      type: None
+      strategy:
+        jenkinsPipelineStrategy:
+          type: JenkinsPipeline
+          jenkinsfile: |-
+           pipeline {
+            tools {
+                       maven 'mvn'
+                       }
+            agent any
+            stages{
+              stage('Checkout'){ 
+                  steps {
+                         git url:"https://${GIT_TOKEN}@${GIT_URL}"
+                         script{
+                          openshift.withCluster() {
+                                openshift.withProject("${DEV_PROJECT}") { 
+                         sh 'oc project ${DEV_PROJECT}'
+                         sh 'oc create configmap ${CONFIGMAP_NAME} --from-file=${CONFIGMAPFILE_PATH}/${CONFIGMAPFILE_NAME}'
+                         sh 'oc set env dc/${APPLICATION_NAME} --from configmap/${CONFIGMAP_NAME}'
+                           }
+                          }
+                         }
+                        }
+                    }
+                }
+            }        
+status:
+  lastVersion: 3
+parameters:
+  - name: APPLICATION_NAME
+    required: true
+  - name: PIPELINE_NAME
+    required: true
+  - name: GIT_URL
+    required: true
+  - name: GIT_TOKEN
+    required: true
+  - name: CONFIGMAPFILE_PATH
+    required: true
+  - name: CONFIGMAPFILE_NAME
+    required: true
+  - name: CONFIGMAP_NAME
+    required: true
+  - name: DEV_PROJECT
+    required: true
