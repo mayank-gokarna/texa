@@ -17,21 +17,49 @@ the tools and IBM practices being demonstrated through the process.
 
 ![Devops](devops.png)
 
-The platform setup, of creatign the various namespeces/project, installing the toolchains can also be handled as a part of this ansible script.For this the change required would be to ensure that the devops role gets executed by making change in apply.yml. Here we will uncomment the devops role and comment out the appsetup role.
+The platform setup, of creatign the various namespeces/project, installing the toolchains can also be handled as a part of this ansible script.For this the change required would be to ensure that the devops role gets executed by making change in apply.yml. Here we will uncomment the devops role and comment out the appsetup role,configchange role.
 
     - {role: 'devops',tags:'openshift'}
     - {role: 'appsetup', tags: 'appsetup'}
+    - {role: 'configchange', tags: 'config'}
    
 Then execute the command as 
 
 <b>ansible-playbook -i inventory/hosts apply.yml</b>
 
+For application specific pipeline creation and executation, the changes needs to be done in the inventory/hosts file. Specify the Git Url/Git token/Devops namespace name etc.
+
+Now comment the devops role, configchange role and uncomment the appsetup role 
+
+ - {role: 'devops',tags:'openshift'}
+ - {role: 'appsetup', tags: 'appsetup'}
+ - {role: 'configchange', tags: 'config'}
+ 
+ Execute the command again as 
+
+<b>ansible-playbook -i inventory/hosts apply.yml</b>
+
+The pipeline will be created and will start the pipeline.
+
+Finally if the application needs some change in its configurations, make these changes in the file on Git and provide these details in the hosts file as follows
+
+isConfigChange=true
+configFileName=<path to the configfile>
+configAppChange=<Name of the application>
+    
+Now comment the devops role,appsetup role and uncomment the configchange role.
+
+- {role: 'devops',tags:'openshift'}
+- {role: 'appsetup', tags: 'appsetup'}
+- {role: 'configchange', tags: 'config'}
+ 
+ Execute the command again as 
+
+<b>ansible-playbook -i inventory/hosts apply.yml</b>
 
 
 **Conclusion**<br/>
-This guide has given you an overview of how some of IBM's cloud native development
-practices and assets together with OpenShift capabilites can provide you with
-considerable efficiencies in your cloud journey.
+This guide has given you an overview of how we would be using the devops on Openshift.
 
 If there is a subject you think we've missed out on and should be covered in this guide,
 please write to us at swabarve@in.ibm.com.
