@@ -17,6 +17,16 @@ the tools and IBM practices being demonstrated through the process.
 
 ![Devops](devops.png)
 
+The platform setup, of creatign the various namespeces/project, installing the toolchains can also be handled as a part of this ansible script.For this the change required would be to ensure that the devops role gets executed by making change in apply.yml. Here we will uncomment the devops role and comment out the appsetup role.
+
+    - {role: 'devops',tags:'openshift'}
+    - {role: 'appsetup', tags: 'appsetup'}
+   
+Then execute the command as 
+
+<b>ansible-playbook -i inventory/hosts apply.yml</b>
+
+
 
 **Conclusion**<br/>
 This guide has given you an overview of how some of IBM's cloud native development
