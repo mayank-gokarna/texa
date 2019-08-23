@@ -1,0 +1,12 @@
+- name: Copy Template File
+  copy:
+    src: secretTemplate.yml
+    dest: /tmp
+
+- name: Create the pipeline
+  shell: oc process -f /tmp/secretTemplate.yml -p APPLICATION_NAME={{ app }} -p PIPELINE_NAME={{ pipeline_name }} -p GIT_URL={{ gitrepo }} -p GIT_TOKEN={{ gittoken }} -p SECRETFILE_NAME={{ secretfilename }} SECRETFILE_PATH={{ secretfilepath }} SECRET_NAME={{ secretname }} -p DEV_PROJECT={{ appproject_dev }} | oc create -f-
+
+- name: Start the build
+  shell: "oc start-build {{ pipeline_name }}"
+
+
