@@ -115,11 +115,41 @@ objects:
                                     app = openshift.newApp("${DEV_PROJECT}/${APPLICATION_NAME}","--allow-missing-imagestream-tags=true", "-e PROFILE=sandbox","-e LOG_PATH=/tmp/logs" )
                                     }else{
                                     app = openshift.newApp("${IMAGE_NAME}~https://${GIT_TOKEN}@${GIT_URL} --name=${APPLICATION_NAME}")
+                                                         
                                     def bc = app.narrow("bc")
-                                    }
+                                    def builds = bc.related('builds')
+                                    timeout(18) {
+                                        builds.watch {
+                                          return it.count() > 0
+                                        }
+                                        builds.watch {
+                                          if ( it.count() == 0 ) return false
+                                          def allDone = true
+                                          it.withEach{
+                                              def buildModel = it.object()
+                                          if ( it.object().status.phase != "Complete" ) {
+                                             allDone = false
+                                             }
+                                          }
+
+                                            return allDone;
+                                          } 
+                                          builds.untilEach(1) { 
+                                            return it.object().status.phase == "Complete"
+                                          }
+                                         }
+                                    }     
                                     app.narrow("svc").expose();
                                     def dc = openshift.selector("dc", "${APPLICATION_NAME}")
-                                    openshift.set("triggers", "dc/${APPLICATION_NAME}", "--manual")
+                                    openshift.set("triggers", "dc/${APPLICATION_NAME}")
+                                    if(true == true){ 
+                                       dc = openshift.selector("dc", "${APPLICATION_NAME}")
+                                       def dcmap = dc.object()
+                                       dcmap.spec.template.metadata.annotations.put("sidecar.istio.io/inject", "true")
+                                       openshift.apply(dcmap)
+                                       minReplicas: ${MIN_POD}
+                                       maxReplicas: ${MAX_POD} 
+                                    }  
                                   }
                                 }
                               }
@@ -220,3 +250,9 @@ parameters:
     required: true 
   - name: IMAGE_NAME
     required: true 
+  - name: ISTIO_REQUIRED
+    required: true
+  - name: MIN_POD
+    required: true
+  - name: MAX_POD
+    required: true

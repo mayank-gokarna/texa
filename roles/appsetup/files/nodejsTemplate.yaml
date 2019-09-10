@@ -154,7 +154,15 @@ objects:
                                          }
                                     app.narrow("svc").expose();
                                     def dc = openshift.selector("dc", "${APPLICATION_NAME}")
-                                    openshift.set("triggers", "dc/${APPLICATION_NAME}", "--manual")
+                                    openshift.set("triggers", "dc/${APPLICATION_NAME}")
+                                    if(true == true){ 
+                                       dc = openshift.selector("dc", "${APPLICATION_NAME}")
+                                       def dcmap = dc.object()
+                                       dcmap.spec.template.metadata.annotations.put("sidecar.istio.io/inject", "true")
+                                       openshift.apply(dcmap)
+                                       minReplicas: ${MIN_POD}
+                                       maxReplicas: ${MAX_POD} 
+                                    }  
                             openshift.tag("${APPLICATION_NAME}", "${APPLICATION_NAME}:promoteToQA")
                                   }
                                 }
@@ -256,4 +264,10 @@ parameters:
   - name: ANGULAR_JS
     required: true
   - name: USEADDITIONAL_PATH
+    required: true
+  - name: ISTIO_REQUIRED
+    required: true
+  - name: MIN_POD
+    required: true
+  - name: MAX_POD
     required: true
