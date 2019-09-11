@@ -26,13 +26,13 @@
 - name: Create the java  pipeline
   vars:
     test: "{{ nodejs }}"
-  shell: oc process -f /tmp/javaTemplate.yaml -p APPLICATION_NAME={{ app }} -p DEV_PROJECT={{ appproject_dev }} -p TEST_PROJECT={{ appproject_test }}  -p STAGE_PROJECT={{appproject_stage}} -p GIT_URL={{ gitrepo }} -p GIT_TOKEN={{ gittoken }} -p DEVOPS_PROJECT={{ project }} -p NODEJS={{ nodejs }} -p IMAGE_NAME="{{ image }}" -p DOCKER_STRATEGY={{ dockerstrategy }} | oc create -f-
+  shell: oc process -f /tmp/javaTemplate.yaml -p APPLICATION_NAME={{ app }} -p DEV_PROJECT={{ appproject_dev }} -p TEST_PROJECT={{ appproject_test }}  -p STAGE_PROJECT={{appproject_stage}} -p GIT_URL={{ gitrepo }} -p GIT_TOKEN={{ gittoken }} -p DEVOPS_PROJECT={{ project }} -p NODEJS={{ nodejs }} -p IMAGE_NAME="{{ image }}" -p ISTIO_REQUIRED="{{ istio_required }}" -p DOCKER_STRATEGY={{ dockerstrategy }} | oc create -f-
   when: test == "false"
 
 - name: Create the nodejs pipeline
   vars:
     test: "{{ nodejs }}"
-  shell: oc process -f /tmp/nodejsTemplate.yaml -p APPLICATION_NAME={{ app }} -p DEV_PROJECT={{ appproject_dev }} -p TEST_PROJECT={{ appproject_test }}  -p STAGE_PROJECT={{appproject_stage}} -p GIT_URL={{ gitrepo }} -p GIT_TOKEN={{ gittoken }} -p DEVOPS_PROJECT={{ project }} -p NODEJS={{ nodejs }} -p IMAGE_NAME="{{ image }}" -p DOCKER_STRATEGY={{ dockerstrategy }}   -p SOURCE_STRATEGY={{ sourcestrategy }} -p ADDITIONAL_PATH={{ additional_path }} -p ANGULAR_JS={{ angularjs }} -p USEADDITIONAL_PATH={{ isAdditionalPath }} | oc create -f-
+  shell: oc process -f /tmp/nodejsTemplate.yaml -p APPLICATION_NAME={{ app }} -p DEV_PROJECT={{ appproject_dev }} -p TEST_PROJECT={{ appproject_test }}  -p STAGE_PROJECT={{appproject_stage}} -p GIT_URL={{ gitrepo }} -p GIT_TOKEN={{ gittoken }} -p DEVOPS_PROJECT={{ project }} -p NODEJS={{ nodejs }} -p IMAGE_NAME="{{ image }}" -p ISTIO_REQUIRED="{{ istio_required }}" -p DOCKER_STRATEGY={{ dockerstrategy }}   -p SOURCE_STRATEGY={{ sourcestrategy }} -p ADDITIONAL_PATH={{ additional_path }} -p ANGULAR_JS={{ angularjs }} -p USEADDITIONAL_PATH={{ isAdditionalPath }} | oc create -f-
   when: test == "true"
 
 - name: Start the build
