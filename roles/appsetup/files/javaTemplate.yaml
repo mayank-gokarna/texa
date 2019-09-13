@@ -108,7 +108,7 @@ objects:
                       stage('Archive Artifact'){
                        steps {
                         script {
-                           sh "curl -k -v -u admin:admin123 --upload-file target/${APPLICATION_NAME}-1.0.0.${EXT} http://nexus-${DEVOPS_PROJECT}.icp6144apps.in.dst.ibm.com/repository/redhat_offerings/${APPLICATION_NAME}/${env.BUILD_NUMBER}/${APPLICATION_NAME}-1.0.0.war"
+                           sh "curl -k -v -u admin:admin123 --upload-file target/${APPLICATION_NAME}-1.0.0.${EXT} http://nexus-${DEVOPS_PROJECT}.icp6144apps.in.dst.ibm.com/repository/redhat_offerings/${APPLICATION_NAME}/${env.BUILD_NUMBER}/${APPLICATION_NAME}-1.0.0.${EXT}"
                            }
                        }
                      }
