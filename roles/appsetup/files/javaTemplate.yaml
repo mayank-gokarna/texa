@@ -105,6 +105,13 @@ objects:
                        }
                       }
                      }
+                      stage('Archive Artifact'){
+                       steps {
+                        script {
+                           sh "curl -k -v -u admin:admin123 --upload-file target/${APPLICATION_NAME}-1.0.0.${EXT} http://nexus-${DEVOPS_PROJECT}.icp6144apps.in.dst.ibm.com/repository/redhat_offerings/${APPLICATION_NAME}/${env.BUILD_NUMBER}/${APPLICATION_NAME}-1.0.0.war"
+                           }
+                       }
+                     }
                       stage('Deploy In Dev') {
                             steps {
                               script {
@@ -255,4 +262,6 @@ parameters:
   - name: MIN_POD
     required: true
   - name: MAX_POD
+    required: true
+  - name: EXT
     required: true
