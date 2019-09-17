@@ -181,17 +181,15 @@ objects:
                            }
                          }
                          stage('Vulnerability Test'){
-                           agent {
-                              docker 'docker'
-                           }
+                           agent any
+
                            steps{
                              script{
                                openshift.withCluster() {
                                  openshift.withProject("${DEV_PROJECT}") {
-                              def dockerTool = tool name: 'docker', type: 'org.jenkinsci.plugins.docker.commons.tools.DockerTool'
-                              withEnv(["DOCKER=${dockerTool}/bin"]) {
+
                                    aquaMicroscanner imageName: '${DEV_PROJECT}/${APPLICATION}:promoteToStage', notCompliesCmd: 'exit 1', onDisallowed: 'fail'
-                                  }
+                                  
                                  }
                                  openshift.withProject("${TEST_PROJECT}") {
                                    mail (to: 'bhjayara@in.ibm.com', subject: "FYI: Job '${env.JOB_NAME}' (${env.BUILD_NUMBER}) deployed to Test", body: "See ${env.BUILD_URL}/input ");
