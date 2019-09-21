@@ -1,7 +1,7 @@
 [all:vars]
 oshost=https://inmbzicp6144.in.dst.ibm.com:8443
 ostoken=cA_uMGNhhmkXwxy6EnuHf1MeRsdc5HXLHf49Orwm_JQ
-project=newdevopstoolchainproject
+project=devopstoolchainproject
 app=inventoryservice
 jenkins_service_name=JenkinsInstance
 state=present
