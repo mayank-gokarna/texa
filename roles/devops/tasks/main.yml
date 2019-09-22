@@ -21,4 +21,6 @@
   shell: "~/oc_CLI/oc new-app -n {{ project }}  -f /tmp/sonar-postress-template.yaml --param=SONARQUBE_VERSION=6.7"
 
 - name: Create the Jenkins Instance
-  shell: "oc new-app -n {{ project }} jenkins-ephemeral"
+  shell: "oc new-app --template=jenkins-persistent \
+    -p JENKINS_IMAGE_STREAM_TAG=jenkins:2 \
+    -p MEMORY_LIMIT=2048Mi "
