@@ -1,6 +1,6 @@
 #!/bin/bash
-export GIT_COMMITTER_DATE="Wed Feb 28 20:01 2020 +0100"
-   export GIT_AUTHOR_DATE="Wed Feb 28 05:09 2020 +0100"
+export GIT_COMMITTER_DATE="Wed Feb 28 20:23 2020 +0100"
+   export GIT_AUTHOR_DATE="Wed Feb 28 05:22 2020 +0100"
 git add .
 git commit -am " new update to code scripts"
 git push origin master
