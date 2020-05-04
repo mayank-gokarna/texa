@@ -60,6 +60,3 @@ Now comment the devops role,appsetup role and uncomment the configchange role.
 
 **Conclusion**<br/>
 This guide has given you an overview of how we would be using the devops on Openshift.
-
-If there is a subject you think we've missed out on and should be covered in this guide,
-please write to us at swabarve@in.ibm.com.
