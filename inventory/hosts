@@ -32,3 +32,4 @@ istio_required=true
 min=1
 max=2
 ext=war
+appproject_test=banktest
