@@ -8,3 +8,9 @@
    - {role: 'configchange', tags: 'configchange'} 
    # - {role: 'secretchange', tags: 'secretchange'}
    - {role: 'secretchange', tags: 'secretchange'} 
+
+# Prepare test database
+COMMAND="bundle exec rake db:drop db:create db:migrate"
+echo -e "\033[34mRunning: $COMMAND\033[0m"
+docker-compose --project-name=${JOB_NAME} run  \
+        -e RAILS_ENV=test web $COMMAND
